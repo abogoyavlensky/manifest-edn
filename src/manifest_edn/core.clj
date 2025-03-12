@@ -93,7 +93,7 @@
                             (assoc manifest source-file-relative output-file-relative)))
                         {}
                         asset-files)]
-     (spit (fs/file resource-dir-target manifest-file) (pr-str manifest-map)))))
+     (spit (fs/file resource-dir-target manifest-file) (pr-str {:assets manifest-map})))))
 
 ; Read assets
 
@@ -110,4 +110,4 @@
    (asset DEFAULT-ASSET-PREFIX asset-file))
   ([asset-prefix asset-file]
    (let [manifest (read-manifest DEFAULT-MANIFEST-FILE)]
-     (format "/%s/%s" asset-prefix (get manifest asset-file asset-file)))))
+     (format "/%s/%s" asset-prefix (get-in manifest [:assets asset-file] asset-file)))))
