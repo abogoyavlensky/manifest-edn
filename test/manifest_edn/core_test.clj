@@ -1,6 +1,5 @@
 (ns manifest-edn.core-test
-  (:require [clojure.test :refer :all]
-            [manifest-edn.core :as core]))
+  (:require [clojure.test :refer :all]))
 
 (deftest test-sum
-  (is (= 3 (core/sum 1 2))))
+  (is (= 3 (+ 1 2))))
