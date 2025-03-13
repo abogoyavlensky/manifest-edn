@@ -8,7 +8,7 @@ A small Clojure/Babashka library for hashing static assets.
 
 ## Overview
 
-`manifest-edn` is a utility library designed to solve the problem of cache busting for static assets in Clojure/Babashka applications. It provides functionality to:
+`manifest-edn` is a utility library designed to solve the problem of cache busting for static assets in Clojure applications. It provides functionality to:
 
 1. Fetch remote assets and save them locally
 2. Hash static assets by appending content-based MD5 hashes to filenames
@@ -28,7 +28,7 @@ Add the dependency to your project:
 {:deps {io.github.abogoyavlensky/manifest-edn {:mvn/version "LATEST"}}}
 
 ;; or Leiningen/Boot
-[io.github.abogoyavlensky/manifest-edn "0.1.0"]
+[io.github.abogoyavlensky/manifest-edn "LATEST"]
 ```
 
 ### Fetching Remote Assets
@@ -48,7 +48,7 @@ As a second argument you can specify a path to a directory where you want to sav
 ```clojure
 (manifest/fetch-assets! ...
                         {:resources-dir "custom-resources"
-                        :public-dir "custom-public"})
+                         :public-dir "custom-public"})
 ```
 
 ### Hashing Assets
@@ -94,7 +94,7 @@ This is useful, for example, in development.
 - Resources directory: `"resources"`
 - Public directory: `"public"`
 - Hashed resources directory: `"resources-hashed"` - this directory will be created automatically and supposed to be **ignored by git**
-- Manifest file: `"manifest.edn"` - this file will be created automatically
+- Manifest file: `"manifest.edn"` - this file will be created automatically at the root of target directory
 - Asset prefix: `"assets"`
 
 ## Development
