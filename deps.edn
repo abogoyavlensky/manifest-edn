@@ -20,7 +20,7 @@
            :build {:deps {io.github.abogoyavlensky/slim {:mvn/version "0.3.1"}
                           slipset/deps-deploy {:mvn/version "0.2.2"}}
                    :ns-default slim.lib
-                   :exec-args {:version "0.1.0"
+                   :exec-args {:version "0.1.1"
                                :lib io.github.abogoyavlensky/manifest-edn
                                :url "https://github.com/abogoyavlensky/manifest-edn"
                                :description "A small Clojure/Babashka library for hashing static assets"
