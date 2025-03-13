@@ -1,7 +1,6 @@
 # manifest-edn
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.github.abogoyavlensky/manifest-edn.svg)](https://clojars.org/io.github.abogoyavlensky/manifest-edn)
-[![cljdoc badge](https://cljdoc.org/badge/io.github.abogoyavlensky/manifest-edn)](https://cljdoc.org/jump/release/io.github.abogoyavlensky/manifest-edn)
 [![CI](https://github.com/abogoyavlensky/manifest-edn/actions/workflows/snapshot.yaml/badge.svg?branch=master)](https://github.com/abogoyavlensky/manifest-edn/actions/workflows/snapshot.yaml)
 
 A small Clojure/Babashka library for hashing static assets.
