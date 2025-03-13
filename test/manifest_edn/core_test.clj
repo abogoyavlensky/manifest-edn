@@ -39,8 +39,8 @@
   (let [temp-resource-dir (create-temp-dir!)
         temp-resource-hashed-dir (create-temp-dir!)]
     (try
-      (binding [*temp-dirs* {:resource-dir temp-resource-dir
-                             :resource-dir-target temp-resource-hashed-dir}]
+      (binding [*temp-dirs* {:resources-dir temp-resource-dir
+                             :resources-dir-target temp-resource-hashed-dir}]
         (f))
       (finally
         (delete-directory! temp-resource-dir)
@@ -52,11 +52,11 @@
 
 (deftest test-hash-asset-file!
   (testing "hash-asset-file! creates a hashed version of the file"
-    (let [temp-dirs {:resource-dir (create-temp-dir!)
-                     :resource-dir-target (create-temp-dir!)}
+    (let [temp-dirs {:resources-dir (create-temp-dir!)
+                     :resources-dir-target (create-temp-dir!)}
           content "body { color: red; }"
-          asset-file (create-test-file! (:resource-dir temp-dirs) "css/styles.css" content)
-          target-dir (fs/file (:resource-dir-target temp-dirs) "css")
+          asset-file (create-test-file! (:resources-dir temp-dirs) "css/styles.css" content)
+          target-dir (fs/file (:resources-dir-target temp-dirs) "css")
           expected-hash (digest/md5 content)
           result (#'manifest/hash-asset-file! {:asset-file asset-file
                                                :target-dir (.getPath target-dir)})
@@ -70,8 +70,8 @@
       (is (= content (slurp result)) "File content should be preserved")
 
       ;; Clean up
-      (delete-directory! (:resource-dir temp-dirs))
-      (delete-directory! (:resource-dir-target temp-dirs)))))
+      (delete-directory! (:resources-dir temp-dirs))
+      (delete-directory! (:resources-dir-target temp-dirs)))))
 
 ;; Tests for fetch-asset! and fetch-assets!
 
@@ -133,18 +133,18 @@
     (let [public-dir "public"
           css-content "body { color: blue; }"
           js-content "console.log('hello');"
-          _css-file (create-test-file! (:resource-dir *temp-dirs*) (str public-dir "/css/styles.css") css-content)
-          _js-file (create-test-file! (:resource-dir *temp-dirs*) (str public-dir "/js/app.js") js-content)
+          _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/styles.css") css-content)
+          _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/app.js") js-content)
           manifest-file "manifest.edn"]
 
       ;; Call hash-assets! with our test directories
-      (manifest/hash-assets! {:resource-dir (:resource-dir *temp-dirs*)
+      (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
                               :public-dir public-dir
-                              :resource-dir-target (:resource-dir-target *temp-dirs*)
+                              :resources-dir-target (:resources-dir-target *temp-dirs*)
                               :manifest-file manifest-file})
 
       ;; Check that the manifest file was created
-      (let [manifest-path (fs/file (:resource-dir-target *temp-dirs*) manifest-file)]
+      (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)]
         (is (fs/exists? manifest-path) "Manifest file should exist")
 
         ;; Parse the manifest and check its contents
@@ -158,15 +158,15 @@
           (is (string? js-path) "JS path should be in the manifest")
 
           ;; Check that the hashed files exist
-          (is (fs/exists? (fs/file (:resource-dir-target *temp-dirs*) public-dir css-path))
+          (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir css-path))
               "Hashed CSS file should exist")
-          (is (fs/exists? (fs/file (:resource-dir-target *temp-dirs*) public-dir js-path))
+          (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir js-path))
               "Hashed JS file should exist")
 
           ;;; Check that the content was preserved
-          (is (= css-content (slurp (fs/file (:resource-dir-target *temp-dirs*) public-dir css-path)))
+          (is (= css-content (slurp (fs/file (:resources-dir-target *temp-dirs*) public-dir css-path)))
               "CSS content should be preserved")
-          (is (= js-content (slurp (fs/file (:resource-dir-target *temp-dirs*) public-dir js-path)))
+          (is (= js-content (slurp (fs/file (:resources-dir-target *temp-dirs*) public-dir js-path)))
               "JS content should be preserved"))))))
 
 (deftest test-hash-assets-with-defaults

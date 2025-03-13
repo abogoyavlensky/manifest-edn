@@ -10,7 +10,7 @@
 (def DEFAULT-PUBLIC-DIR "public")
 (def DEFAULT-RESOURCES-HASHED-DIR "resources-hashed")
 (def DEFAULT-MANIFEST-FILE "manifest.edn")
-(def DEFAULT-ASSET-PREFIX "assets")
+(def DEFAULT-ASSETS-PREFIX "assets")
 
 ; Hash assets
 
@@ -60,20 +60,24 @@
                          :response (:body response)}))))))
 
 (defn fetch-assets!
-  [assets-map]
-  (let [target-dir (.getPath (fs/file DEFAULT-RESOURCES-DIR DEFAULT-PUBLIC-DIR))]
-    (doseq [item assets-map]
-      (fetch-asset! item target-dir))))
+  ([assets-map]
+   (fetch-assets! assets-map {}))
+  ([assets-map {:keys [resources-dir public-dir]
+                :or {resources-dir DEFAULT-RESOURCES-DIR
+                     public-dir DEFAULT-PUBLIC-DIR}}]
+   (let [target-dir (.getPath (fs/file resources-dir public-dir))]
+     (doseq [item assets-map]
+       (fetch-asset! item target-dir)))))
 
 (defn hash-assets!
   ([]
    (hash-assets! {}))
-  ([{:keys [resource-dir public-dir resource-dir-target manifest-file]
+  ([{:keys [resources-dir public-dir resources-dir-target manifest-file]
      :or {manifest-file DEFAULT-MANIFEST-FILE
-          resource-dir DEFAULT-RESOURCES-DIR
+          resources-dir DEFAULT-RESOURCES-DIR
           public-dir DEFAULT-PUBLIC-DIR
-          resource-dir-target DEFAULT-RESOURCES-HASHED-DIR}}]
-   (let [resource-public-path (fs/file resource-dir public-dir)
+          resources-dir-target DEFAULT-RESOURCES-HASHED-DIR}}]
+   (let [resource-public-path (fs/file resources-dir public-dir)
          asset-files (->> (file-seq resource-public-path)
                           (remove #(fs/directory? %)))
          manifest-map (reduce
@@ -84,21 +88,21 @@
                                                           (apply fs/file)
                                                           .getPath)
                                 target-dir (->> (fs/components file)
-                                                (drop (count (fs/components (fs/file resource-dir))))
-                                                (concat [(fs/path resource-dir-target)])
+                                                (drop (count (fs/components (fs/file resources-dir))))
+                                                (concat [(fs/path resources-dir-target)])
                                                 (apply fs/file)
                                                 (fs/parent))
                                 output-file (hash-asset-file! {:asset-file (.getPath file)
                                                                :target-dir target-dir})
                                 output-file-relative (->> output-file
                                                           (fs/components)
-                                                          (drop (count (fs/components (fs/file resource-dir-target public-dir))))
+                                                          (drop (count (fs/components (fs/file resources-dir-target public-dir))))
                                                           (apply fs/file)
                                                           .getPath)]
                             (assoc manifest source-file-relative output-file-relative)))
                         {}
                         asset-files)]
-     (spit (fs/file resource-dir-target manifest-file) (pr-str {:assets manifest-map})))))
+     (spit (fs/file resources-dir-target manifest-file) (pr-str {:assets manifest-map})))))
 
 ; Read assets
 
@@ -112,7 +116,7 @@
 
 (defn asset
   ([asset-file]
-   (asset DEFAULT-ASSET-PREFIX asset-file))
+   (asset DEFAULT-ASSETS-PREFIX asset-file))
   ([asset-prefix asset-file]
    (let [manifest (read-manifest DEFAULT-MANIFEST-FILE)]
      (format "/%s/%s" asset-prefix (get-in manifest [:assets asset-file] asset-file)))))
