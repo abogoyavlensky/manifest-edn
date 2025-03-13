@@ -42,7 +42,7 @@ Use `fetch-assets!` to download remote assets and save them locally:
                           :filepath "js/alpinejs.min.js"}])
  ```
 
-This will download the specified files and save them to the `resources/public` directory.
+This will download the specified files and save them by default to the `resources/public` directory under `:filepath`.
 As a second argument you can specify a path to a directory where you want to save the assets:
 ```clojure
 (manifest/fetch-assets! ...
@@ -58,10 +58,9 @@ Use `hash-assets!` to process all static assets in your public directory:
 (manifest/hash-assets!)
 
 ;; Or with custom options
-(manifest/hash-assets!
-  {:resource-dir "custom-resources"
-   :public-dir "static"
-   :resource-dir-target "dist"})
+(manifest/hash-assets! {:resource-dir "custom-resources"
+                        :public-dir "static"
+                        :resource-dir-target "dist"})
  ```
 
 This will:
