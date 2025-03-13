@@ -73,23 +73,28 @@
           resource-dir DEFAULT-RESOURCES-DIR
           public-dir DEFAULT-PUBLIC-DIR
           resource-dir-target DEFAULT-RESOURCES-HASHED-DIR}}]
-   (let [asset-files (->> (file-seq (fs/file resource-dir public-dir))
+   (let [resource-public-path (fs/file resource-dir public-dir)
+         asset-files (->> (file-seq resource-public-path)
                           (remove #(fs/directory? %)))
          manifest-map (reduce
                         (fn [manifest file]
                           (let [source-file-relative (->> file
                                                           (fs/components)
-                                                          (drop 2)
+                                                          (drop (count (fs/components resource-public-path)))
                                                           (apply fs/file)
                                                           .getPath)
                                 target-dir (->> (fs/components file)
-                                                (drop 1)
+                                                (drop (count (fs/components (fs/file resource-dir))))
                                                 (concat [(fs/path resource-dir-target)])
                                                 (apply fs/file)
                                                 (fs/parent))
                                 output-file (hash-asset-file! {:asset-file (.getPath file)
                                                                :target-dir target-dir})
-                                output-file-relative (.getPath (apply fs/file (drop 2 (fs/components output-file))))]
+                                output-file-relative (->> output-file
+                                                          (fs/components)
+                                                          (drop (count (fs/components (fs/file resource-dir-target public-dir))))
+                                                          (apply fs/file)
+                                                          .getPath)]
                             (assoc manifest source-file-relative output-file-relative)))
                         {}
                         asset-files)]
