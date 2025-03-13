@@ -36,10 +36,10 @@ Use `fetch-assets!` to download remote assets and save them locally:
 ```clojure
 (require '[manifest-edn.core :as manifest])
 
-(manifest/fetch-assets! [{:url "https://cdn.example.com/jquery.min.js" 
-                          :filepath "js/jquery.min.js"}
-                         {:url "https://cdn.example.com/styles.css" 
-                          :filepath "css/styles.css"}])
+(manifest/fetch-assets! [{:url "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" 
+                          :filepath "js/htmx.min.js"}
+                         {:url "https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" 
+                          :filepath "js/alpinejs.min.js"}])
  ```
 
 This will download the specified files and save them to the `resources/public` directory.
@@ -77,13 +77,16 @@ Use the asset function to get the correct path to a hashed asset:
 ```clojure
 (require '[manifest-edn.core :as manifest])
 
-;; In your HTML templates
-(def js-path (manifest/asset "js/app.js"))
-;; => "/assets/js/app.a1b2c3d4.js"
-
-;; With custom asset prefix
-(def css-path (manifest/asset "static" "css/styles.css"))
-;; => "/static/css/styles.e5f6g7h8.css"
+;; In your HTML templates with Hiccup
+(defn index []
+  [:html
+   [:head
+    [:link {:type "text/css"
+            :href (manifest/asset "css/output.css")
+            :rel "stylesheet"}]]
+   [:body
+    [:script {:src (manifest/asset "js/htmx.min.js")}]
+    [:script {:src (manifest/asset "js/alpinejs.min.js")}]]])
  ```
 
 The function will return the hashed path if available, or fall back to the original path if not found in the manifest.
@@ -94,7 +97,7 @@ This is useful, for example, in development.
 - Public directory: `"public"`
 - Hashed resources directory: `"resources-hashed"` - this directory will be created automatically and supposed to be **ignored by git**
 - Manifest file: `"manifest.edn"` - this file will be created automatically at the root of target directory
-- Asset prefix: `"assets"`
+- Asset prefix in url: `"assets"` - this prefix will be added to the path of the asset in the url: `/assets/css/output.css`
 
 ## Development
 
