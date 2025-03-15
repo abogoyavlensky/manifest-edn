@@ -9,10 +9,10 @@ A small Clojure/Babashka library for hashing static assets.
 
 `manifest-edn` is a utility library designed to solve the problem of cache busting for static assets in Clojure applications. It provides functionality to:
 
-1. Fetch remote assets and save them locally
-2. Hash static assets by appending content-based MD5 hashes to filenames
-3. Generate a manifest file mapping original filenames to their hashed versions
-4. Retrieve asset paths at runtime using the manifest
+- Fetch remote assets and save them locally
+- Hash static assets by appending content-based MD5 hashes to filenames
+- Generate a manifest file mapping original filenames to their hashed versions
+- Retrieve asset paths at runtime using the manifest
 
 This approach ensures that when asset content changes, the filename also changes, forcing browsers to download the new version instead of using a cached copy.
 
@@ -65,10 +65,10 @@ Use `hash-assets!` to process all static assets in your public directory:
 
 This will:
 
-1. Find all files in your public directory
-2. Create hashed versions (e.g., `app.js` -> `app.a1b2c3d4.js`)
-3. Save them to the target directory
-4. Generate a manifest file mapping original paths to hashed paths
+- Find all files in your public directory
+- Create hashed versions (e.g., `app.js` -> `app.a1b2c3d4.js`)
+- Save them to the target directory
+- Generate a manifest file mapping original paths to hashed paths
 
 ### Referencing Assets in Templates
 Use the asset function to get the correct path to a hashed asset:
