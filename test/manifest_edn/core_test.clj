@@ -73,6 +73,30 @@
       (delete-directory! (:resources-dir temp-dirs))
       (delete-directory! (:resources-dir-target temp-dirs)))))
 
+(deftest test-hash-asset-file-binary!
+  (testing "hash-asset-file! preserves binary files without corruption"
+    (let [temp-dirs {:resources-dir (create-temp-dir!)
+                     :resources-dir-target (create-temp-dir!)}
+          binary-data (byte-array [0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A])
+          asset-file (let [file-path (fs/file (:resources-dir temp-dirs) "images/logo.png")]
+                       (when-not (fs/exists? (fs/parent file-path))
+                         (fs/create-dirs (fs/parent file-path)))
+                       (with-open [out (io/output-stream file-path)]
+                         (.write out binary-data))
+                       (.getPath file-path))
+          result (#'manifest/hash-asset-file! {:asset-file asset-file
+                                               :target-dir (.getPath (fs/file (:resources-dir-target temp-dirs) "images"))})
+          result-bytes (with-open [in (io/input-stream result)]
+                         (let [buffer (java.io.ByteArrayOutputStream.)]
+                           (io/copy in buffer)
+                           (.toByteArray buffer)))]
+
+      (is (= (seq binary-data) (seq result-bytes)) "Binary content should be identical (no corruption)")
+
+      ;; Clean up
+      (delete-directory! (:resources-dir temp-dirs))
+      (delete-directory! (:resources-dir-target temp-dirs)))))
+
 ;; Tests for fetch-asset! and fetch-assets!
 
 (deftest test-fetch-asset!
