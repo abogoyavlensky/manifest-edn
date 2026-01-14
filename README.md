@@ -70,6 +70,45 @@ This will:
 - Save them to the target directory
 - Generate a manifest file mapping original paths to hashed paths
 
+#### Filtering Assets
+
+You can control which files to hash using `:include-patterns` and `:exclude-patterns`:
+
+```clojure
+; Only hash CSS files
+(manifest/hash-assets! {:include-patterns ["css/.*"]})
+
+; Hash everything except JavaScript files
+(manifest/hash-assets! {:exclude-patterns ["js/.*"]})
+
+; Hash JS and CSS, but exclude minified files
+(manifest/hash-assets! {:include-patterns ["(js|css)/.*"]
+                        :exclude-patterns [".*\\.min\\..*"]})
+```
+
+**Pattern format:**
+- Patterns are regex strings (EDN-compatible for use in `bb.edn`)
+- Patterns match against relative file paths from the public directory (e.g., `"js/app.js"`, `"css/styles.css"`)
+- `:include-patterns` - if provided, only matching files are hashed (empty = include all)
+- `:exclude-patterns` - matching files are excluded from hashing
+- Include patterns are applied first, then exclude patterns
+
+#### Incremental Hashing
+
+`hash-assets!` merges new assets into the existing manifest rather than overwriting it. This allows you to run it multiple times with different filters:
+
+```clojure
+; First run: hash CSS files
+(manifest/hash-assets! {:include-patterns ["css/.*"]})
+
+; Second run: hash JS files (preserves CSS entries)
+(manifest/hash-assets! {:include-patterns ["js/.*"]})
+
+; Result: manifest contains both CSS and JS entries
+```
+
+This is useful when you want to hash different asset types separately or update specific files without re-hashing everything.
+
 ### Referencing Assets in Templates
 Use the asset function to get the correct path to a hashed asset:
 

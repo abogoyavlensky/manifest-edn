@@ -14,6 +14,15 @@
 
 ; Hash assets
 
+(defn- matches-pattern?
+  [file-path patterns]
+  (some (fn [pattern]
+          (let [regex (if (string? pattern)
+                        (re-pattern pattern)
+                        pattern)]
+            (re-find regex file-path)))
+        patterns))
+
 (defn- hash-asset-file!
   [{:keys [asset-file target-dir]}]
   (let [content (slurp asset-file)
@@ -69,17 +78,33 @@
      (doseq [item assets-map]
        (fetch-asset! item target-dir)))))
 
+(defn- read-existing-manifest
+  [manifest-path]
+  (when (fs/exists? manifest-path)
+    (-> manifest-path slurp edn/read-string :assets)))
+
 (defn hash-assets!
   ([]
    (hash-assets! {}))
-  ([{:keys [resources-dir public-dir resources-dir-target manifest-file]
+  ([{:keys [resources-dir public-dir resources-dir-target manifest-file include-patterns exclude-patterns]
      :or {manifest-file DEFAULT-MANIFEST-FILE
           resources-dir DEFAULT-RESOURCES-DIR
           public-dir DEFAULT-PUBLIC-DIR
-          resources-dir-target DEFAULT-RESOURCES-HASHED-DIR}}]
+          resources-dir-target DEFAULT-RESOURCES-HASHED-DIR
+          include-patterns []
+          exclude-patterns []}}]
    (let [resource-public-path (fs/file resources-dir public-dir)
+         manifest-path (fs/file resources-dir-target manifest-file)
+         existing-assets (or (read-existing-manifest manifest-path) {})
          asset-files (->> (file-seq resource-public-path)
-                          (remove #(fs/directory? %)))
+                          (remove #(fs/directory? %))
+                          (filter #(or (empty? include-patterns)
+                                       (matches-pattern?
+                                         (str (fs/relativize resource-public-path %))
+                                         include-patterns)))
+                          (remove #(matches-pattern?
+                                     (str (fs/relativize resource-public-path %))
+                                     exclude-patterns)))
          manifest-map (reduce
                         (fn [manifest file]
                           (let [source-file-relative (->> file
@@ -100,9 +125,9 @@
                                                           (apply fs/file)
                                                           .getPath)]
                             (assoc manifest source-file-relative output-file-relative)))
-                        {}
+                        existing-assets
                         asset-files)]
-     (spit (fs/file resources-dir-target manifest-file) (pr-str {:assets manifest-map})))))
+     (spit manifest-path (pr-str {:assets manifest-map})))))
 
 ; Read assets
 

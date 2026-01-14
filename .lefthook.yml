@@ -1,0 +1,9 @@
+pre-push:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.{clj,cljc,cljs,edn}"
+      run: bb fmt-check
+    lint:
+      glob: "*.{clj,cljc,cljs,edn}"
+      run: bb lint

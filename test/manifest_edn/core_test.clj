@@ -169,6 +169,138 @@
           (is (= js-content (slurp (fs/file (:resources-dir-target *temp-dirs*) public-dir js-path)))
               "JS content should be preserved"))))))
 
+(deftest test-hash-assets-with-exclude-patterns
+  (let [public-dir "public"
+        css-content "body { color: green; }"
+        js-content "console.log('excluded');"
+        _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/main.css") css-content)
+        _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/script.js") js-content)
+        manifest-file "manifest.edn"]
+
+    ; Call hash-assets! with exclude-patterns to exclude all js files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :exclude-patterns [#"js/.*"]})
+
+    ; Check the manifest file
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          manifest-content (edn/read-string (slurp manifest-path))
+          assets (:assets manifest-content)]
+
+      (is (contains? assets "css/main.css") "CSS file should be in the manifest")
+      (is (not (contains? assets "js/script.js")) "JS file should be excluded from the manifest")
+
+      ; Check that CSS file was hashed but JS file was not
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get assets "css/main.css")))
+          "Hashed CSS file should exist")
+      (is (not (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir "js")))
+          "JS directory should not be created in target"))))
+
+(deftest test-hash-assets-with-exclude-patterns-as-strings
+  (let [public-dir "public"
+        css-content "body { color: yellow; }"
+        js-content "console.log('excluded too');"
+        img-content "fake-image-content"
+        _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/app.css") css-content)
+        _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/main.js") js-content)
+        _img-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/images/logo.png") img-content)
+        manifest-file "manifest.edn"]
+
+    ; Call hash-assets! with exclude-patterns as plain strings (for EDN compatibility)
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :exclude-patterns ["js/.*" "images/.*"]})
+
+    ; Check the manifest file
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          manifest-content (edn/read-string (slurp manifest-path))
+          assets (:assets manifest-content)]
+
+      (is (contains? assets "css/app.css") "CSS file should be in the manifest")
+      (is (not (contains? assets "js/main.js")) "JS file should be excluded from the manifest")
+      (is (not (contains? assets "images/logo.png")) "Image file should be excluded from the manifest")
+
+      ; Check that only CSS file was hashed
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get assets "css/app.css")))
+          "Hashed CSS file should exist"))))
+
+(deftest test-hash-assets-with-include-patterns
+  (let [public-dir "public"
+        css-content "body { color: purple; }"
+        js-content "console.log('not included');"
+        img-content "fake-image-data"
+        _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/theme.css") css-content)
+        _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/bundle.js") js-content)
+        _img-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/images/icon.png") img-content)
+        manifest-file "manifest.edn"]
+
+    ; Call hash-assets! with include-patterns to only include CSS files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :include-patterns ["css/.*"]})
+
+    ; Check the manifest file
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          manifest-content (edn/read-string (slurp manifest-path))
+          assets (:assets manifest-content)]
+
+      (is (contains? assets "css/theme.css") "CSS file should be in the manifest")
+      (is (not (contains? assets "js/bundle.js")) "JS file should not be included")
+      (is (not (contains? assets "images/icon.png")) "Image file should not be included")
+
+      ; Check that only CSS file was hashed
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get assets "css/theme.css")))
+          "Hashed CSS file should exist"))))
+
+(deftest test-hash-assets-updates-existing-manifest
+  (let [public-dir "public"
+        css-content "body { background: white; }"
+        js-content "console.log('merging test');"
+        _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/base.css") css-content)
+        _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/app.js") js-content)
+        manifest-file "manifest.edn"]
+
+    ; First call: hash only CSS files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :include-patterns ["css/.*"]})
+
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          first-manifest (edn/read-string (slurp manifest-path))
+          first-assets (:assets first-manifest)]
+
+      (is (contains? first-assets "css/base.css") "CSS file should be in manifest after first call")
+      (is (not (contains? first-assets "js/app.js")) "JS file should not be in manifest after first call"))
+
+    ; Second call: hash only JS files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :include-patterns ["js/.*"]})
+
+    ; Verify both CSS and JS are in the final manifest
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          final-manifest (edn/read-string (slurp manifest-path))
+          final-assets (:assets final-manifest)]
+
+      (is (contains? final-assets "css/base.css") "CSS file should still be in manifest after second call")
+      (is (contains? final-assets "js/app.js") "JS file should be added to manifest after second call")
+
+      ; Verify both hashed files exist
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get final-assets "css/base.css")))
+          "Hashed CSS file should exist")
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get final-assets "js/app.js")))
+          "Hashed JS file should exist"))))
+
 (deftest test-hash-assets-with-defaults
   (testing "hash-assets! works with default parameters"
     (with-redefs [clojure.core/file-seq (fn [_] [])
