@@ -258,6 +258,49 @@
       (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get assets "css/theme.css")))
           "Hashed CSS file should exist"))))
 
+(deftest test-hash-assets-updates-existing-manifest
+  (let [public-dir "public"
+        css-content "body { background: white; }"
+        js-content "console.log('merging test');"
+        _css-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/css/base.css") css-content)
+        _js-file (create-test-file! (:resources-dir *temp-dirs*) (str public-dir "/js/app.js") js-content)
+        manifest-file "manifest.edn"]
+
+    ; First call: hash only CSS files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :include-patterns ["css/.*"]})
+
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          first-manifest (edn/read-string (slurp manifest-path))
+          first-assets (:assets first-manifest)]
+
+      (is (contains? first-assets "css/base.css") "CSS file should be in manifest after first call")
+      (is (not (contains? first-assets "js/app.js")) "JS file should not be in manifest after first call"))
+
+    ; Second call: hash only JS files
+    (manifest/hash-assets! {:resources-dir (:resources-dir *temp-dirs*)
+                            :public-dir public-dir
+                            :resources-dir-target (:resources-dir-target *temp-dirs*)
+                            :manifest-file manifest-file
+                            :include-patterns ["js/.*"]})
+
+    ; Verify both CSS and JS are in the final manifest
+    (let [manifest-path (fs/file (:resources-dir-target *temp-dirs*) manifest-file)
+          final-manifest (edn/read-string (slurp manifest-path))
+          final-assets (:assets final-manifest)]
+
+      (is (contains? final-assets "css/base.css") "CSS file should still be in manifest after second call")
+      (is (contains? final-assets "js/app.js") "JS file should be added to manifest after second call")
+
+      ; Verify both hashed files exist
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get final-assets "css/base.css")))
+          "Hashed CSS file should exist")
+      (is (fs/exists? (fs/file (:resources-dir-target *temp-dirs*) public-dir (get final-assets "js/app.js")))
+          "Hashed JS file should exist"))))
+
 (deftest test-hash-assets-with-defaults
   (testing "hash-assets! works with default parameters"
     (with-redefs [clojure.core/file-seq (fn [_] [])

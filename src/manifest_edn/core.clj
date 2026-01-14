@@ -78,6 +78,11 @@
      (doseq [item assets-map]
        (fetch-asset! item target-dir)))))
 
+(defn- read-existing-manifest
+  [manifest-path]
+  (when (fs/exists? manifest-path)
+    (-> manifest-path slurp edn/read-string :assets)))
+
 (defn hash-assets!
   ([]
    (hash-assets! {}))
@@ -89,6 +94,8 @@
           include-patterns []
           exclude-patterns []}}]
    (let [resource-public-path (fs/file resources-dir public-dir)
+         manifest-path (fs/file resources-dir-target manifest-file)
+         existing-assets (or (read-existing-manifest manifest-path) {})
          asset-files (->> (file-seq resource-public-path)
                           (remove #(fs/directory? %))
                           (filter #(or (empty? include-patterns)
@@ -118,9 +125,9 @@
                                                           (apply fs/file)
                                                           .getPath)]
                             (assoc manifest source-file-relative output-file-relative)))
-                        {}
+                        existing-assets
                         asset-files)]
-     (spit (fs/file resources-dir-target manifest-file) (pr-str {:assets manifest-map})))))
+     (spit manifest-path (pr-str {:assets manifest-map})))))
 
 ; Read assets
 

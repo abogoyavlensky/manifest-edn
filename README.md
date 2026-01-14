@@ -93,6 +93,22 @@ You can control which files to hash using `:include-patterns` and `:exclude-patt
 - `:exclude-patterns` - matching files are excluded from hashing
 - Include patterns are applied first, then exclude patterns
 
+#### Incremental Hashing
+
+`hash-assets!` merges new assets into the existing manifest rather than overwriting it. This allows you to run it multiple times with different filters:
+
+```clojure
+; First run: hash CSS files
+(manifest/hash-assets! {:include-patterns ["css/.*"]})
+
+; Second run: hash JS files (preserves CSS entries)
+(manifest/hash-assets! {:include-patterns ["js/.*"]})
+
+; Result: manifest contains both CSS and JS entries
+```
+
+This is useful when you want to hash different asset types separately or update specific files without re-hashing everything.
+
 ### Referencing Assets in Templates
 Use the asset function to get the correct path to a hashed asset:
 
