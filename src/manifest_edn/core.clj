@@ -14,14 +14,14 @@
 
 ; Hash assets
 
-(defn- matches-exclude-pattern?
-  [file-path exclude-patterns]
+(defn- matches-pattern?
+  [file-path patterns]
   (some (fn [pattern]
           (let [regex (if (string? pattern)
                         (re-pattern pattern)
                         pattern)]
             (re-find regex file-path)))
-        exclude-patterns))
+        patterns))
 
 (defn- hash-asset-file!
   [{:keys [asset-file target-dir]}]
@@ -81,16 +81,21 @@
 (defn hash-assets!
   ([]
    (hash-assets! {}))
-  ([{:keys [resources-dir public-dir resources-dir-target manifest-file exclude-patterns]
+  ([{:keys [resources-dir public-dir resources-dir-target manifest-file include-patterns exclude-patterns]
      :or {manifest-file DEFAULT-MANIFEST-FILE
           resources-dir DEFAULT-RESOURCES-DIR
           public-dir DEFAULT-PUBLIC-DIR
           resources-dir-target DEFAULT-RESOURCES-HASHED-DIR
+          include-patterns []
           exclude-patterns []}}]
    (let [resource-public-path (fs/file resources-dir public-dir)
          asset-files (->> (file-seq resource-public-path)
                           (remove #(fs/directory? %))
-                          (remove #(matches-exclude-pattern?
+                          (filter #(or (empty? include-patterns)
+                                       (matches-pattern?
+                                         (str (fs/relativize resource-public-path %))
+                                         include-patterns)))
+                          (remove #(matches-pattern?
                                      (str (fs/relativize resource-public-path %))
                                      exclude-patterns)))
          manifest-map (reduce
