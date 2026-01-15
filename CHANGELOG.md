@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - `:include-patterns` option for `hash-assets!` to whitelist specific files by regex patterns
 - Incremental hashing support - `hash-assets!` now merges new assets into existing manifest instead of overwriting
 
+### Fixed
+
+- Fixed binary file corruption in `hash-asset-file!` and `fetch-asset!` functions. The previous implementation used `slurp`/`spit` which corrupted binary files (like PNG images) by applying UTF-8 encoding. Binary files are now handled correctly using `io/input-stream` and `io/output-stream`.
+
 ## 0.1.0 - 2025-03-12
 
 ### Added

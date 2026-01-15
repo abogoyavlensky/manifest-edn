@@ -12,6 +12,23 @@
 (def DEFAULT-MANIFEST-FILE "manifest.edn")
 (def DEFAULT-ASSETS-PREFIX "assets")
 
+; File I/O utilities
+
+(defn- read-binary-file
+  "Reads a file as binary data and returns a byte array."
+  [filepath]
+  (with-open [in (io/input-stream filepath)]
+    (let [buffer (java.io.ByteArrayOutputStream.)]
+      (io/copy in buffer)
+      (.toByteArray buffer))))
+
+(defn- write-binary-file!
+  "Writes binary data to a file."
+  [filepath content]
+  (with-open [out (io/output-stream filepath)]
+    (.write out content))
+  filepath)
+
 ; Hash assets
 
 (defn- matches-pattern?
@@ -25,8 +42,8 @@
 
 (defn- hash-asset-file!
   [{:keys [asset-file target-dir]}]
-  (let [content (slurp asset-file)
-        content-hash (digest/md5 content)
+  (let [content-bytes (read-binary-file asset-file)
+        content-hash (digest/md5 content-bytes)
         asset-file-name (fs/file-name asset-file)
         [asset-file-name-no-ext asset-file-ext] (fs/split-ext asset-file-name)
         asset-file-name-hashed (format "%s.%s.%s" asset-file-name-no-ext content-hash asset-file-ext)
@@ -35,9 +52,8 @@
     (when-not (fs/exists? (fs/parent asset-file-path-hashed))
       (fs/create-dirs (fs/parent asset-file-path-hashed)))
 
-    ; create hashed asset file
-    (spit asset-file-path-hashed content)
-    asset-file-path-hashed))
+    ; create hashed asset file using binary I/O
+    (write-binary-file! asset-file-path-hashed content-bytes)))
 
 (defn- fetch-asset!
   "Fetches an asset file from a URL and saves it to resources/public directory.
@@ -60,8 +76,10 @@
           content (:body response)]
       (if (= 200 (:status response))
         (do
-          ; Save the file
-          (spit target-filepath content)
+          ; Save the file using binary I/O to handle both text and binary files
+          (if (bytes? content)
+            (write-binary-file! target-filepath content)
+            (spit target-filepath content))
           (println (format "Saved to %s" target-filepath)))
         (throw (ex-info "Failed to fetch JavaScript file"
                         {:url url
