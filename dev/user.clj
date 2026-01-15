@@ -9,7 +9,7 @@
   []
   (repl/refresh))
 
-(defn run-all-tests
+(defn run-tests
   "Run all tests."
   []
   (reset)
@@ -18,4 +18,4 @@
 (comment
   ; Manage the system
   (reset)
-  (run-all-tests))
+  (run-tests))

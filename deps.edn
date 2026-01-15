@@ -1,6 +1,6 @@
-{:deps {org.clojure/clojure {:mvn/version "1.12.0"}
-        babashka/fs {:mvn/version "0.5.24"}
-        org.babashka/http-client {:mvn/version "0.4.22"}
+{:deps {org.clojure/clojure {:mvn/version "1.12.4"}
+        babashka/fs {:mvn/version "0.5.30"}
+        org.babashka/http-client {:mvn/version "0.4.23"}
         org.clj-commons/digest {:mvn/version "1.4.100"}}
  :paths ["src"]
 
@@ -17,7 +17,7 @@
            :outdated {:extra-deps {com.github.liquidz/antq ^:antq/exclude {:mvn/version "2.11.1276"}}
                       :main-opts ["-m" "antq.core" "--no-diff"]}
 
-           :build {:deps {io.github.abogoyavlensky/slim {:mvn/version "0.3.1"}
+           :build {:deps {io.github.abogoyavlensky/slim {:mvn/version "0.3.2"}
                           slipset/deps-deploy {:mvn/version "0.2.2"}}
                    :ns-default slim.lib
                    :exec-args {:version "0.1.2"
